@@ -1,152 +1,169 @@
+# Ensure pysqlite3 compatibility with LangChain
 import sys
 import pysqlite3
 sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
+# Core imports
 import streamlit as st
 import requests
+import warnings
 import pandas as pd
+import plotly.express as px
 import re
-import json
 
+# CrewAI & LangChain
 from crewai import Agent, Task, Crew
-from langchain.chat_models import ChatOpenAI
 from langchain.tools import Tool
+from langchain.llms import HuggingFaceHub  # ✅ Using free Hugging Face LLM
 
-# --------------------------
-# Fetch news from RSS feed (TechCrunch example)
-def fetch_news(topic):
-    url = f"https://techcrunch.com/tag/{topic}/feed/"
-    resp = requests.get(url)
-    if resp.status_code != 200:
+warnings.filterwarnings("ignore")
+
+# ----------------------------
+# News API Wrapper
+# ----------------------------
+def fetch_tech_news(topic):
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": topic,
+        "apiKey": "<YOUR_NEWS_API_KEY>",  # <-- Replace with your NewsAPI.org key
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": 10
+    }
+    response = requests.get(url, params=params)
+    try:
+        data = response.json()
+    except:
         return []
-    import feedparser
-    feed = feedparser.parse(resp.text)
+
     results = []
-    for entry in feed.entries[:10]:
+    for article in data.get("articles", []):
         results.append({
-            "title": entry.title,
-            "summary": entry.get("summary", ""),
-            "link": entry.link
+            "title": article.get("title"),
+            "description": article.get("description"),
+            "author": article.get("author"),
+            "url": article.get("url")
         })
     return results
 
 def fetch_wrapper(input):
-    topic = input if isinstance(input, str) else input.get("topic", "")
-    return fetch_news(topic)
-
-# --------------------------
-# Streamlit UI
-st.set_page_config(page_title="Tech News Digest", layout="wide")
-st.title("📰 Tech News Digest with CrewAI")
-
-topic = st.text_input("🔎 Enter topic (e.g. AI, Security, Blockchain)", "AI")
-run = st.button("Run Analysis")
-
-if run:
-    if not topic.strip():
-        st.error("Please enter a valid topic!")
+    if isinstance(input, dict):
+        topic = input.get("topic") or next(iter(input.values()))
     else:
-        with st.spinner("Running multi-agent system..."):
+        topic = input
+    return fetch_tech_news(topic)
 
-            # Initialize LLM (use your free OpenRouter or any open model)
-            api_key = st.text_input("Enter your OpenRouter API Key (optional for some open models)", type="password")
+# ----------------------------
+# Streamlit UI
+# ----------------------------
+st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
+st.title("📰 Tech News Trend Analyzer (Multi-Agent)")
 
-            llm = ChatOpenAI(
-                model_name="gpt-3.5-turbo",
-                api_key=api_key or None,
-                temperature=0.5,
-                max_tokens=512
-            )
+hf_token = st.text_input("🔑 Enter your Hugging Face API Token", type="password")
+topic = st.text_input("💡 Enter a technology topic", "AI")
+run_button = st.button("🚀 Analyze")
 
-            # Tool to fetch news
-            tool_fetch = Tool(
-                name="NewsFetcher",
+if run_button:
+    if not hf_token:
+        st.error("❌ Please enter your Hugging Face API Token.")
+    else:
+        with st.spinner("Running agents..."):
+            try:
+                llm = HuggingFaceHub(
+                    repo_id="google/flan-t5-large",
+                    huggingfacehub_api_token=hf_token,
+                    model_kwargs={"temperature": 0.7, "max_length": 512}
+                )
+            except Exception as e:
+                st.error(f"❌ LLM error: {str(e)}")
+                st.stop()
+
+            tool = Tool(
+                name="TechNewsFetcher",
                 func=fetch_wrapper,
-                description="Fetch latest news articles by topic",
+                description="Fetch recent technology news articles.",
                 return_direct=True
             )
 
-            # Agents
             fetcher = Agent(
                 role="News Fetcher",
-                goal="Fetch latest news articles on given topic",
-                tools=[tool_fetch],
-                backstory="Expert at fetching news.",
+                goal="Get recent news on a topic",
+                tools=[tool],
+                backstory="Expert at sourcing tech news from the web.",
                 verbose=True,
                 llm=llm
             )
 
-            analyzer = Agent(
-                role="News Analyzer",
-                goal="Extract keywords and summarize news articles",
-                backstory="Expert in NLP summarization and keyword extraction.",
+            summarizer = Agent(
+                role="Summarizer",
+                goal="Summarize the fetched news",
+                backstory="Skilled at condensing information.",
                 verbose=True,
                 llm=llm
             )
 
-            reporter = Agent(
-                role="Reporter",
-                goal="Generate final report and save it to a file",
-                backstory="Writes clear reports and saves outputs.",
+            trend_analyzer = Agent(
+                role="Trend Detector",
+                goal="Extract main keywords",
+                backstory="NLP expert for trend recognition.",
                 verbose=True,
                 llm=llm
             )
 
-            # Tasks
-            fetch_task = Task(
-                description=f"Fetch news on topic '{topic}'",
-                expected_output="List of news articles with title, summary, and link",
+            task_fetch = Task(
+                description=f"Fetch latest news on '{topic}'.",
+                expected_output="List of news with title, summary, author, and URL.",
                 agent=fetcher
             )
 
-            analyze_task = Task(
-                description="Analyze news and extract top 5 keywords and summaries",
-                expected_output="Keywords list and summaries",
-                agent=analyzer,
-                context=[fetch_task]
+            task_summary = Task(
+                description="Summarize the collected news articles in brief.",
+                expected_output="Summary paragraph covering main points.",
+                agent=summarizer,
+                context=[task_fetch]
             )
 
-            report_task = Task(
-                description="Generate a final report combining news and analysis, then save to file",
-                expected_output="Report text",
-                agent=reporter,
-                context=[fetch_task, analyze_task]
+            task_trend = Task(
+                description="Extract trending keywords from news titles and descriptions.",
+                expected_output="Top 10 keywords.",
+                agent=trend_analyzer,
+                context=[task_fetch]
             )
 
             crew = Crew(
-                agents=[fetcher, analyzer, reporter],
-                tasks=[fetch_task, analyze_task, report_task],
+                agents=[fetcher, summarizer, trend_analyzer],
+                tasks=[task_fetch, task_summary, task_trend],
                 verbose=True
             )
 
-            inputs = {"topic": topic}
-            crew.kickoff(inputs=inputs)
-
-            # Display fetched news
-            st.markdown("## 📰 Latest News Articles")
             try:
-                news_list = fetch_task.output
-                if not news_list or not isinstance(news_list, list):
-                    news_list = []
-            except Exception:
-                news_list = []
+                result = crew.kickoff(inputs={"topic": topic})
+                st.success("✅ Done!")
 
-            for news in news_list:
-                st.markdown(f"### [{news['title']}]({news['link']})")
-                st.markdown(news['summary'])
+                # Display news results
+                st.markdown("## 🗞 News Articles")
+                news_items = fetch_wrapper(topic)
+                if news_items:
+                    for item in news_items:
+                        with st.expander(item["title"]):
+                            st.write(item["description"])
+                            st.write(f"**Author:** {item['author']}")
+                            st.markdown(f"[Read more]({item['url']})")
+                else:
+                    st.warning("No news articles fetched.")
 
-            # Display analysis
-            st.markdown("## 🔍 Analysis")
-            st.write(analyze_task.output or "No analysis available.")
+                # Display trends
+                st.markdown("## 📈 Trending Keywords")
+                trends = str(task_trend.output).strip().split("\n")
+                keywords = [re.sub(r"[-•]\s*", "", k) for k in trends if k.strip()]
+                if keywords:
+                    df_keywords = pd.DataFrame({'Keyword': keywords[:10]})
+                    fig = px.bar(df_keywords, x='Keyword', title="Top Trending Keywords", color='Keyword')
+                    st.plotly_chart(fig, use_container_width=True)
 
-            # Display report and provide download link
-            report_text = report_task.output or "No report generated."
-            st.markdown("## 📄 Final Report")
-            st.text_area("Report", report_text, height=300)
+                # Display summary
+                st.markdown("## 🧠 Summary")
+                st.markdown(str(task_summary.output))
 
-            # Save report to file
-            with open("report.txt", "w", encoding="utf-8") as f:
-                f.write(report_text)
-
-            st.markdown("[Download Report](report.txt)")
-
+            except Exception as e:
+                st.error(f"❌ Error during execution: {str(e)}")
