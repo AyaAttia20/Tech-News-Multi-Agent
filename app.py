@@ -11,7 +11,7 @@ import re
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceHub
+from langchain.chat_models import ChatOpenAI
 
 warnings.filterwarnings("ignore")
 
@@ -57,20 +57,20 @@ st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
 st.title("📰 Tech News Trend Analyzer (Multi-Agent)")
 
 topic = st.text_input("💡 Enter a technology topic", "AI")
-hf_token = st.text_input("🔐 Enter your Hugging Face API Key", type="password")
+openai_api_key = st.text_input("🔐 Enter your OpenAI API Key", type="password")
 news_api_key = st.text_input("🗝️ Enter your News API Key", type="password")
 run_button = st.button("🚀 Analyze")
 
 if run_button:
-    if not hf_token or not news_api_key:
-        st.error("❌ Please enter both the Hugging Face and News API keys.")
+    if not openai_api_key or not news_api_key:
+        st.error("❌ Please enter both the OpenAI and News API keys.")
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = HuggingFaceHub(
-                    repo_id="google/flan-t5-large",
-                    huggingfacehub_api_token=hf_token,
-                    model_kwargs={"temperature": 0.7, "max_length": 512}
+                llm = ChatOpenAI(
+                    model_name="gpt-3.5-turbo",
+                    temperature=0.7,
+                    openai_api_key=openai_api_key
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
@@ -153,7 +153,7 @@ if run_button:
                 # Display trends
                 st.markdown("## 📈 Trending Keywords")
                 trends = str(task_trend.output).strip().split("\n")
-                keywords = [re.sub(r"[-•]\s*", "", k) for k in trends if k.strip()]
+                keywords = [re.sub(r"[-\u2022]\s*", "", k) for k in trends if k.strip()]
                 if keywords:
                     df_keywords = pd.DataFrame({'Keyword': keywords[:10]})
                     fig = px.bar(df_keywords, x='Keyword', title="Top Trending Keywords", color='Keyword')
