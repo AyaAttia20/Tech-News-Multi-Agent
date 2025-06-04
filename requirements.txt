@@ -1,9 +1,7 @@
 streamlit
-requests
-pandas
-plotly
 crewai
 langchain
-openai
-tiktoken
-pysqlite3-binary
+huggingface_hub
+pysqlite3
+plotly
+requests
