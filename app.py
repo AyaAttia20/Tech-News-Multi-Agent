@@ -14,7 +14,7 @@ import re
 # CrewAI & LangChain
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceHub  # ✅ Using free Hugging Face LLM
+from langchain.llms import HuggingFaceInference  # Updated LLM import
 
 warnings.filterwarnings("ignore")
 
@@ -25,7 +25,7 @@ def fetch_tech_news(topic):
     url = "https://newsapi.org/v2/everything"
     params = {
         "q": topic,
-        "apiKey": "<YOUR_NEWS_API_KEY>",  # <-- Replace with your NewsAPI.org key
+        "apiKey": "b28fbde27df94d63937a9cd0ed01070a",  # <-- Replace with your NewsAPI.org key
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 10
@@ -69,10 +69,11 @@ if run_button:
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = HuggingFaceHub(
-                    repo_id="google/flan-t5-large",
+                llm = HuggingFaceInference(
+                    model_id="google/flan-t5-large",
                     huggingfacehub_api_token=hf_token,
-                    model_kwargs={"temperature": 0.7, "max_length": 512}
+                    temperature=0.7,
+                    max_new_tokens=512,
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
