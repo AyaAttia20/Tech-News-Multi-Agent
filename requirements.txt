@@ -1,8 +1,21 @@
+# Core LLM, agents, orchestration
 crewai==0.30.5
-langchain>=0.0.197,<0.2.0
+langchain>=0.1.10,<0.2.0
+transformers>=4.40.0
+torch>=2.1.0
+accelerate
+pydantic==1.10.13  # CrewAI and older LangChain versions use v1
+
+# SQLite compatibility (for LangChain tools)
+pysqlite3-binary
+
+# Web/API access
 requests>=2.28,<2.32
+
+# UI and visualization
 streamlit
 pandas
 plotly
-feedparser
-pysqlite3-binary
+
+# Env key management
+python-dotenv
