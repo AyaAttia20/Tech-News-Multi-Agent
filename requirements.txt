@@ -1,24 +1,18 @@
-# Core LLMs and Agent Orchestration
 crewai==0.30.5
-langchain>=0.1.10,<0.2.0
+langchain>=0.0.197,<2.0.0
 transformers>=4.40.0
 torch>=2.1.0
 accelerate
-pydantic>=2.4.2,<3.0.0  # compatible with CrewAI
+pydantic>=2.4.2,<3.0.0
 
-# SQLite support
 pysqlite3-binary
 
-# Web/API access
 requests>=2.28,<2.32
 
-# Streamlit UI and data visualization
 streamlit
 pandas
 plotly
 
-# Environment variable management
 python-dotenv
 
-# Rich output (compatible with embedchain/instructor)
 rich>=13.7.0,<14.0.0
