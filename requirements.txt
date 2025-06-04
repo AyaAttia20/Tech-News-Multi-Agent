@@ -1,7 +1,9 @@
-streamlit
-crewai
-langchain
-huggingface_hub
-pysqlite3
-plotly
-requests
+streamlit>=1.33.0
+crewai>=0.20.11
+langchain>=0.1.20
+langchain-community>=0.0.36
+huggingface_hub>=0.21.4
+pysqlite3-binary>=0.5.1
+requests>=2.31.0
+plotly>=5.20.0
+pandas>=2.2.2
