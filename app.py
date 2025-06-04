@@ -1,22 +1,22 @@
-# Ensure pysqlite3 compatibility with LangChain
 import sys
 import pysqlite3
 sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
-# Core imports
 import streamlit as st
 import requests
 import warnings
 import pandas as pd
 import plotly.express as px
 import re
+import os
+from dotenv import load_dotenv
 
-# CrewAI & LangChain
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceHub  # Use HuggingFaceHub, NOT HuggingFaceInference
+from langchain.llms import HuggingFaceHub  # Correct import for HuggingFace
 
 warnings.filterwarnings("ignore")
+load_dotenv()
 
 # ----------------------------
 # News API Wrapper
@@ -25,7 +25,7 @@ def fetch_tech_news(topic):
     url = "https://newsapi.org/v2/everything"
     params = {
         "q": topic,
-        "apiKey": "b28fbde27df94d63937a9cd0ed01070a",  # <-- Replace with your NewsAPI.org key
+        "apiKey": os.getenv("NEWS_API_KEY"),
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 10
@@ -59,13 +59,13 @@ def fetch_wrapper(input):
 st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
 st.title("📰 Tech News Trend Analyzer (Multi-Agent)")
 
-hf_token = st.text_input("🔑 Enter your Hugging Face API Token", type="password")
 topic = st.text_input("💡 Enter a technology topic", "AI")
 run_button = st.button("🚀 Analyze")
 
 if run_button:
+    hf_token = os.getenv("HUGGINGFACE_API_KEY")
     if not hf_token:
-        st.error("❌ Please enter your Hugging Face API Token.")
+        st.error("❌ Hugging Face API token not found in environment variables.")
     else:
         with st.spinner("Running agents..."):
             try:
@@ -155,7 +155,7 @@ if run_button:
                 # Display trends
                 st.markdown("## 📈 Trending Keywords")
                 trends = str(task_trend.output).strip().split("\n")
-                keywords = [re.sub(r"[-•]\s*", "", k) for k in trends if k.strip()]
+                keywords = [re.sub(r"[-\u2022]\s*", "", k) for k in trends if k.strip()]
                 if keywords:
                     df_keywords = pd.DataFrame({'Keyword': keywords[:10]})
                     fig = px.bar(df_keywords, x='Keyword', title="Top Trending Keywords", color='Keyword')
