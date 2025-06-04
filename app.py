@@ -11,7 +11,7 @@ import re
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceHub
+from langchain.llms import HuggingFaceEndpoint  # ✅ Changed from HuggingFaceHub
 
 warnings.filterwarnings("ignore")
 
@@ -67,10 +67,11 @@ if run_button:
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = HuggingFaceHub(
-                    repo_id="google/flan-t5-large",
+                # ✅ Replaced HuggingFaceHub with HuggingFaceEndpoint
+                llm = HuggingFaceEndpoint(
+                    endpoint_url="https://api-inference.huggingface.co/models/google/flan-t5-large",
                     huggingfacehub_api_token=hf_token,
-                    model_kwargs={"temperature": 0.7, "max_length": 512}
+                    model_kwargs={"temperature": 0.7, "max_new_tokens": 512}
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
