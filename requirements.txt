@@ -6,7 +6,7 @@ huggingface_hub==0.14.1
 requests==2.31.0
 plotly==5.15.0
 pandas==2.2.2
-pysqlite3-binary==0.5.1
+pysqlite3-binary
 rich==13.7.0
 tiktoken==0.7.0
 chromadb==0.4.24
