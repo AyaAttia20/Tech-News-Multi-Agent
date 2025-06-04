@@ -11,7 +11,7 @@ import re
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceEndpoint  # ✅ Changed from HuggingFaceHub
+from langchain.llms import HuggingFaceHub
 
 warnings.filterwarnings("ignore")
 
@@ -67,11 +67,10 @@ if run_button:
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = HuggingFaceEndpoint(
-                    endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+                llm = HuggingFaceHub(
+                    repo_id="google/flan-t5-large",
                     huggingfacehub_api_token=hf_token,
-                    temperature=0.7,
-                    max_new_tokens=512
+                    model_kwargs={"temperature": 0.7, "max_length": 512}
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
@@ -154,7 +153,7 @@ if run_button:
                 # Display trends
                 st.markdown("## 📈 Trending Keywords")
                 trends = str(task_trend.output).strip().split("\n")
-                keywords = [re.sub(r"[-\u2022]\s*", "", k) for k in trends if k.strip()]
+                keywords = [re.sub(r"[-•]\s*", "", k) for k in trends if k.strip()]
                 if keywords:
                     df_keywords = pd.DataFrame({'Keyword': keywords[:10]})
                     fig = px.bar(df_keywords, x='Keyword', title="Top Trending Keywords", color='Keyword')
