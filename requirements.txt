@@ -1,0 +1,8 @@
+crewai==0.30.5
+langchain>=0.0.197,<0.2.0
+requests>=2.28,<2.32
+streamlit
+pandas
+plotly
+feedparser
+pysqlite3-binary
