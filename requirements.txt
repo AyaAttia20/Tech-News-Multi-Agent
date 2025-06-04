@@ -19,3 +19,5 @@ plotly
 
 # Env key management
 python-dotenv
+
+rich==13.7.1
