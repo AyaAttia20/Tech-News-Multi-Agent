@@ -11,7 +11,7 @@ import re
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.chat_models import ChatOpenAI
+from langchain import HuggingFaceHub
 
 warnings.filterwarnings("ignore")
 
@@ -54,23 +54,23 @@ def fetch_wrapper(input, api_key):
 # Streamlit UI
 # ----------------------------
 st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
-st.title("📰 Tech News Trend Analyzer (Multi-Agent)")
+st.title("📰 Tech News Trend Analyzer (Multi-Agent, Free API)")
 
 topic = st.text_input("💡 Enter a technology topic", "AI")
-openai_api_key = st.text_input("🔐 Enter your OpenAI API Key", type="password")
+hf_token = st.text_input("🔐 Enter your FREE Hugging Face API Token", type="password")
 news_api_key = st.text_input("🗝️ Enter your News API Key", type="password")
 run_button = st.button("🚀 Analyze")
 
 if run_button:
-    if not openai_api_key or not news_api_key:
-        st.error("❌ Please enter both the OpenAI and News API keys.")
+    if not hf_token or not news_api_key:
+        st.error("❌ Please enter both the Hugging Face and News API keys.")
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = ChatOpenAI(
-                    model_name="gpt-3.5-turbo",
-                    temperature=0.7,
-                    openai_api_key=openai_api_key
+                llm = HuggingFaceHub(
+                    repo_id="mistralai/Mistral-7B-Instruct-v0.2",
+                    huggingfacehub_api_token=hf_token,
+                    model_kwargs={"temperature": 0.7, "max_new_tokens": 512}
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
