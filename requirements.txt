@@ -2,17 +2,11 @@ crewai==0.30.5
 langchain>=0.0.197,<0.3.0
 transformers>=4.40.0
 torch>=2.1.0
-accelerate
 pydantic>=2.4.2,<3.0.0
-
 pysqlite3-binary
-
 requests>=2.28,<2.32
-
 streamlit
 pandas
 plotly
-
 python-dotenv
-
 rich>=13.7.0,<14.0.0
