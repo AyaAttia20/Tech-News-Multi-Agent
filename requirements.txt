@@ -4,9 +4,9 @@ langchain>=0.1.10,<0.2.0
 transformers>=4.40.0
 torch>=2.1.0
 accelerate
-pydantic==1.10.13  # CrewAI and older LangChain versions use Pydantic v1
+pydantic>=2.4.2,<3.0.0  # compatible with CrewAI
 
-# SQLite compatibility (needed by some LangChain agents/tools)
+# SQLite support
 pysqlite3-binary
 
 # Web/API access
@@ -20,5 +20,5 @@ plotly
 # Environment variable management
 python-dotenv
 
-# Rich output (compatible with other libs)
+# Rich output (compatible with embedchain/instructor)
 rich>=13.7.0,<14.0.0
