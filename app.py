@@ -14,7 +14,7 @@ import re
 # CrewAI & LangChain
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceInference  # Updated LLM import
+from langchain.llms import HuggingFaceHub  # Use HuggingFaceHub, NOT HuggingFaceInference
 
 warnings.filterwarnings("ignore")
 
@@ -69,11 +69,10 @@ if run_button:
     else:
         with st.spinner("Running agents..."):
             try:
-                llm = HuggingFaceInference(
-                    model_id="google/flan-t5-large",
+                llm = HuggingFaceHub(
+                    repo_id="google/flan-t5-large",
                     huggingfacehub_api_token=hf_token,
-                    temperature=0.7,
-                    max_new_tokens=512,
+                    model_kwargs={"temperature": 0.7, "max_length": 512}
                 )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
