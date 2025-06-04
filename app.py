@@ -11,7 +11,7 @@ import re
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain import HuggingFaceHub
+from langchain_community.llms import HuggingFaceHub
 
 warnings.filterwarnings("ignore")
 
@@ -30,7 +30,7 @@ def fetch_tech_news(topic, api_key):
     response = requests.get(url, params=params)
     try:
         data = response.json()
-    except:
+    except Exception:
         return []
 
     results = []
@@ -44,10 +44,7 @@ def fetch_tech_news(topic, api_key):
     return results
 
 def fetch_wrapper(input, api_key):
-    if isinstance(input, dict):
-        topic = input.get("topic") or next(iter(input.values()))
-    else:
-        topic = input
+    topic = input.get("topic") if isinstance(input, dict) else input
     return fetch_tech_news(topic, api_key)
 
 # ----------------------------
@@ -57,8 +54,8 @@ st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
 st.title("📰 Tech News Trend Analyzer (Multi-Agent, Free API)")
 
 topic = st.text_input("💡 Enter a technology topic", "AI")
-hf_token = st.text_input("🔐 Enter your FREE Hugging Face API Token", type="password")
-news_api_key = st.text_input("🗝️ Enter your News API Key", type="password")
+hf_token = st.text_input("🔐 Hugging Face API Token", type="password")
+news_api_key = st.text_input("🗝️ News API Key", type="password")
 run_button = st.button("🚀 Analyze")
 
 if run_button:
@@ -153,7 +150,7 @@ if run_button:
                 # Display trends
                 st.markdown("## 📈 Trending Keywords")
                 trends = str(task_trend.output).strip().split("\n")
-                keywords = [re.sub(r"[-\u2022]\s*", "", k) for k in trends if k.strip()]
+                keywords = [re.sub(r"[-•]\s*", "", k.strip()) for k in trends if k.strip()]
                 if keywords:
                     df_keywords = pd.DataFrame({'Keyword': keywords[:10]})
                     fig = px.bar(df_keywords, x='Keyword', title="Top Trending Keywords", color='Keyword')
