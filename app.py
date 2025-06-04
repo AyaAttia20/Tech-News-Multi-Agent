@@ -68,11 +68,11 @@ if run_button:
         with st.spinner("Running agents..."):
             try:
                 llm = HuggingFaceEndpoint(
-                        endpoint_url="https://api-inference.huggingface.co/models/google/flan-t5-large",
-                        huggingfacehub_api_token=hf_token,
-                        temperature=0.7,
-                        max_new_tokens=512
-                    )
+                    endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+                    huggingfacehub_api_token=hf_token,
+                    temperature=0.7,
+                    max_new_tokens=512
+                )
             except Exception as e:
                 st.error(f"❌ LLM error: {str(e)}")
                 st.stop()
