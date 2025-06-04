@@ -10,3 +10,4 @@ pandas
 plotly
 python-dotenv
 rich>=13.7.0,<14.0.0
+huggingface_hub>=0.16,<1.0  
