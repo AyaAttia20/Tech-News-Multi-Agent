@@ -8,24 +8,21 @@ import warnings
 import pandas as pd
 import plotly.express as px
 import re
-import os
-from dotenv import load_dotenv
 
 from crewai import Agent, Task, Crew
 from langchain.tools import Tool
-from langchain.llms import HuggingFaceHub  # Correct import for HuggingFace
+from langchain.llms import HuggingFaceHub
 
 warnings.filterwarnings("ignore")
-load_dotenv()
 
 # ----------------------------
 # News API Wrapper
 # ----------------------------
-def fetch_tech_news(topic):
+def fetch_tech_news(topic, api_key):
     url = "https://newsapi.org/v2/everything"
     params = {
         "q": topic,
-        "apiKey": os.getenv("NEWS_API_KEY"),
+        "apiKey": api_key,
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 10
@@ -46,12 +43,12 @@ def fetch_tech_news(topic):
         })
     return results
 
-def fetch_wrapper(input):
+def fetch_wrapper(input, api_key):
     if isinstance(input, dict):
         topic = input.get("topic") or next(iter(input.values()))
     else:
         topic = input
-    return fetch_tech_news(topic)
+    return fetch_tech_news(topic, api_key)
 
 # ----------------------------
 # Streamlit UI
@@ -60,12 +57,13 @@ st.set_page_config(page_title="Tech News Trend Analyzer", layout="wide")
 st.title("📰 Tech News Trend Analyzer (Multi-Agent)")
 
 topic = st.text_input("💡 Enter a technology topic", "AI")
+hf_token = st.text_input("🔐 Enter your Hugging Face API Key", type="password")
+news_api_key = st.text_input("🗝️ Enter your News API Key", type="password")
 run_button = st.button("🚀 Analyze")
 
 if run_button:
-    hf_token = os.getenv("HUGGINGFACE_API_KEY")
-    if not hf_token:
-        st.error("❌ Hugging Face API token not found in environment variables.")
+    if not hf_token or not news_api_key:
+        st.error("❌ Please enter both the Hugging Face and News API keys.")
     else:
         with st.spinner("Running agents..."):
             try:
@@ -80,7 +78,7 @@ if run_button:
 
             tool = Tool(
                 name="TechNewsFetcher",
-                func=fetch_wrapper,
+                func=lambda x: fetch_wrapper(x, news_api_key),
                 description="Fetch recent technology news articles.",
                 return_direct=True
             )
@@ -142,7 +140,7 @@ if run_button:
 
                 # Display news results
                 st.markdown("## 🗞 News Articles")
-                news_items = fetch_wrapper(topic)
+                news_items = fetch_tech_news(topic, news_api_key)
                 if news_items:
                     for item in news_items:
                         with st.expander(item["title"]):
